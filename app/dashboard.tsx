@@ -284,7 +284,7 @@ export default function Dashboard({ userRole, user, onLogout }: DashboardProps) 
               />
             )}
             {activeTab === "targets" && <SalesTargetsContent userRole={userRole} />}
-            {activeTab === "deals" && <DealsContent userRole={userRole} user={user} />}
+            {activeTab === "deals" && <SalesAnalysisDashboard userRole={userRole} user={user} />}
             {activeTab === "deals-analytics" && userRole === "manager" && <ManagerDealsDashboard />}
             {activeTab === "notifications" && <NotificationsPage userRole={userRole} />}
             {activeTab === "customers" && <CustomersContent userRole={userRole} user={user} />}
@@ -668,10 +668,7 @@ const DashboardContent = ({
       </p>
       
       {/* Sales Dashboard Component */}
-      <SalesDashboard 
-        userRole={userRole} 
-        userId={getUserId()}
-      />
+      <SalesAnalysisDashboard />
       
       {/* Additional metrics and charts based on user role */}
       {userRole === 'manager' && (
@@ -1115,6 +1112,7 @@ function SettingsContent({ userRole }: { userRole: string }) {
 }
 
 import { CustomerList } from "./components/customer-list"
+import { SalesAnalysisDashboard } from '@/components/sales-dashboard-fixed';
 
 function CustomersContent({ userRole, user }: { userRole: string; user: { name: string; username: string } }) {
   return (

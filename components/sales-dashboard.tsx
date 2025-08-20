@@ -1,179 +1,570 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { useSalesData } from "@/hooks/useSalesData";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Skeleton } from "./ui/skeleton";
+import React, { useState, useEffect, useMemo } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, ScatterChart, Scatter, ZAxis } from 'recharts';
+import { TrendingUp, DollarSign, Users, Target, Calendar, Award, UserCheck, BarChart3 } from 'lucide-react';
+import Papa from 'papaparse';
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658', '#FF7300'];
 
-export function SalesDashboard({ userRole, userId }: { userRole: string; userId?: string }) {
-  const { sales, metrics, loading, error } = useSalesData(userRole, userId);
+interface DealData {
+  date: Date;
+  amount: number;
+  salesAgent: string;
+  closingAgent: string;
+  service: string;
+  program: string;
+  team: string;
+  duration: string;
+  [key: string]: any; // For other CSV fields
+}
+
+interface SalesAnalysisDashboardProps {
+  userRole: 'manager' | 'salesman' | 'customer-service';
+  user: { name: string; username: string };
+}
+
+interface AnalyticsData {
+  totalSales: number;
+  totalDeals: number;
+  averageDealSize: number;
+  salesByAgent: Array<{ agent: string; sales: number; deals: number }>;
+  salesByService: Array<{ service: string; sales: number }>;
+  salesByTeam: Array<{ team: string; sales: number }>;
+  salesByProgram: Array<{ program: string; sales: number }>;
+  dailyTrend: Array<{ date: string; sales: number }>;
+  topAgents: Array<{ agent: string; sales: number }>;
+  recentDeals: DealData[];
+  filteredData: DealData[];
+  userAnalysisData: any;
+}
+
+function SalesAnalysisDashboard({ userRole, user }: SalesAnalysisDashboardProps) {
+  const [salesData, setSalesData] = useState<DealData[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  // Load and parse CSV data
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const csvData = await window.fs.readFile('aug-ids.csv', { encoding: 'utf8' });
+        
+        Papa.parse(csvData, {
+          header: true,
+          skipEmptyLines: true,
+          dynamicTyping: true,
+          complete: (results) => {
+            // Clean and process the data
+            const processedData = results.data.map(row => ({
+              ...row,
+              date: new Date(row.date),
+              amount: parseFloat(row.AMOUNT) || 0,
+              salesAgent: row.sales_agent_norm?.toLowerCase() || '',
+              closingAgent: row.closing_agent_norm?.toLowerCase() || '',
+              service: row['TYPE SERVISE'] || 'Unknown',
+              program: row['TYPE PROGRAM'] || 'Unknown',
+              team: row.TEAM || 'Unknown',
+              duration: row.DURATION || 'Unknown'
+            }));
+            
+            setSalesData(processedData);
+            setLoading(false);
+          },
+          error: (error) => {
+            console.error('Error parsing CSV:', error);
+            setLoading(false);
+          }
+        });
+      } catch (error) {
+        console.error('Error loading file:', error);
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  // Calculate metrics based on role
+  const analytics = useMemo<AnalyticsData | null>(() => {
+    if (!salesData.length) return null;
+
+    let filteredData = salesData;
+    
+    // Filter data based on user role
+    if (userRole === 'salesman' && user) {
+      const agentName = user.name.toLowerCase();
+      filteredData = salesData.filter(deal => 
+        (deal.salesAgent?.toLowerCase() === agentName) || 
+        (deal.closingAgent?.toLowerCase() === agentName)
+      );
+    }
+
+    const totalSales = filteredData.reduce((sum, deal) => sum + (deal.amount || 0), 0);
+    const totalDeals = filteredData.length;
+    const averageDealSize = totalDeals > 0 ? totalSales / totalDeals : 0;
+
+    // Initialize typed objects for aggregations
+    const salesByAgent: { [key: string]: { agent: string; sales: number; deals: number } } = {};
+    const salesByService: { [key: string]: { service: string; sales: number } } = {};
+    const salesByTeam: { [key: string]: { team: string; sales: number } } = {};
+    const salesByProgram: { [key: string]: { program: string; sales: number } } = {};
+    const dailyTrend: { [key: string]: { date: string; sales: number } } = {};
+
+    // Process data for aggregations
+    filteredData.forEach(deal => {
+      // Sales by agent
+      const agentName = deal.salesAgent || 'Unknown';
+      if (!salesByAgent[agentName]) {
+        salesByAgent[agentName] = { agent: agentName, sales: 0, deals: 0 };
+      }
+      salesByAgent[agentName].sales += deal.amount || 0;
+      salesByAgent[agentName].deals += 1;
+
+      // Sales by service
+      const service = deal.service || 'Unknown';
+      if (!salesByService[service]) {
+        salesByService[service] = { service, sales: 0 };
+      }
+      salesByService[service].sales += deal.amount || 0;
+
+      // Sales by team
+      const team = deal.team || 'Unknown';
+      if (!salesByTeam[team]) {
+        salesByTeam[team] = { team, sales: 0 };
+      }
+      salesByTeam[team].sales += deal.amount || 0;
+
+      // Sales by program
+      const program = deal.program || 'Unknown';
+      if (!salesByProgram[program]) {
+        salesByProgram[program] = { program, sales: 0 };
+      }
+      salesByProgram[program].sales += deal.amount || 0;
+
+      // Daily trend
+      const dateStr = deal.date?.toISOString().split('T')[0] || 'Unknown';
+      if (!dailyTrend[dateStr]) {
+        dailyTrend[dateStr] = { date: dateStr, sales: 0 };
+      }
+      dailyTrend[dateStr].sales += deal.amount || 0;
+    });
+
+    // Convert to arrays and sort
+    const sortedAgents = Object.values(salesByAgent)
+      .sort((a, b) => b.sales - a.sales);
+      
+    const sortedServices = Object.values(salesByService)
+      .sort((a, b) => b.sales - a.sales);
+      
+    const sortedTeams = Object.values(salesByTeam)
+      .sort((a, b) => b.sales - a.sales);
+      
+    const sortedPrograms = Object.values(salesByProgram)
+      .sort((a, b) => b.sales - a.sales);
+      
+    const sortedDailyTrend = Object.values(dailyTrend)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    // Get top 10 agents for the table
+    const topAgents = sortedAgents.slice(0, 10).map(agent => ({
+      agent: agent.agent,
+      sales: agent.sales,
+      deals: agent.deals
+    }));
+    
+    // Get recent deals (last 10)
+    const recentDeals = [...filteredData]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 10);
+
+    // User analysis data
+    const userAnalysisData = [
+      { name: 'Deals Closed', value: totalDeals },
+      { name: 'Total Sales', value: totalSales },
+      { name: 'Avg. Deal Size', value: Math.round(averageDealSize) },
+      { name: 'Top Service', value: sortedServices[0]?.service || 'N/A' },
+    ];
+
+    return {
+      totalSales,
+      totalDeals,
+      averageDealSize,
+      salesByAgent: sortedAgents,
+      salesByService: sortedServices,
+      salesByTeam: sortedTeams,
+      salesByProgram: sortedPrograms,
+      dailyTrend: sortedDailyTrend,
+      topAgents,
+      recentDeals,
+      filteredData,
+      userAnalysisData
+    };
+  }, [salesData, userRole, user]);
+
+    // Convert to array for charts
+    const userAnalysisData = Object.entries(userAnalysis).map(([userCount, data]) => ({
+      userCount: parseInt(userCount),
+      dealsCount: data.count,
+      totalAmount: data.totalAmount,
+      avgAmount: data.totalAmount / data.count
+    })).sort((a, b) => a.userCount - b.userCount);
+
+    return {
+      totalSales,
+      totalDeals,
+      averageDealSize,
+      salesByAgent,
+      salesByService,
+      salesByTeam,
+      salesByProgram,
+      dailyTrend,
+      topAgents,
+      recentDeals,
+      filteredData,
+      userAnalysisData // NEW
+    };
+  }, [salesData, userRole, user]);
 
   if (loading) {
     return (
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {[1, 2, 3, 4].map((i) => (
-          <Skeleton key={i} className="h-36 w-full" />
-        ))}
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-2">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+              <p>Loading sales data...</p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
-  if (error) {
+  if (!analytics) {
     return (
-      <div className="text-red-500 p-4 border border-red-200 rounded-lg bg-red-50">
-        Error loading sales data: {error.message}
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card>
+          <CardContent className="p-6">
+            <p className="text-red-600">No sales data available</p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
-
-  if (!metrics) {
-    return (
-      <div className="text-yellow-600 p-4 border border-yellow-200 rounded-lg bg-yellow-50">
-        No sales data available
-      </div>
-    );
-  }
-
-  // Prepare data for charts
-  const topAgents = Object.entries(metrics.salesByAgent || {})
-    .map(([agent, amount]) => ({ agent, amount }))
-    .sort((a, b) => b.amount - a.amount)
-    .slice(0, 5);
-
-  const serviceData = Object.entries(metrics.salesByService || {})
-    .map(([name, value]) => ({ name, value }))
-    .sort((a, b) => b.value - a.value);
 
   return (
-    <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
-            <span className="h-4 w-4 text-muted-foreground">$</span>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${metrics.totalSales.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">across {metrics.totalDeals} deals</p>
-          </CardContent>
-        </Card>
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold mb-2">Welcome back, {user.name}!</h1>
+          <p className="text-gray-600">
+            {userRole === 'manager' 
+              ? 'Here\'s an overview of your team\'s performance.' 
+              : userRole === 'salesman'
+              ? 'Track your sales performance and targets.'
+              : 'Customer support dashboard.'}
+          </p>
+        </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Average Deal</CardTitle>
-            <span className="h-4 w-4 text-muted-foreground">$</span>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${metrics.averageDealSize.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
-            <p className="text-xs text-muted-foreground">per deal</p>
-          </CardContent>
-        </Card>
+        {/* Key Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total Sales</p>
+                  <p className="text-2xl font-bold text-gray-900">${analytics.totalSales.toLocaleString()}</p>
+                </div>
+                <DollarSign className="h-8 w-8 text-green-600" />
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Top Agent</CardTitle>
-            <span className="h-4 w-4 text-muted-foreground">👤</span>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {topAgents[0]?.agent || 'N/A'}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              ${topAgents[0]?.amount?.toLocaleString() || '0'}
-            </p>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total Deals</p>
+                  <p className="text-2xl font-bold text-gray-900">{analytics.totalDeals}</p>
+                </div>
+                <Target className="h-8 w-8 text-blue-600" />
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Top Service</CardTitle>
-            <span className="h-4 w-4 text-muted-foreground">📊</span>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {serviceData[0]?.name || 'N/A'}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              ${serviceData[0]?.value?.toLocaleString() || '0'}
-            </p>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Average Deal</p>
+                  <p className="text-2xl font-bold text-gray-900">${analytics.averageDealSize.toFixed(0)}</p>
+                </div>
+                <TrendingUp className="h-8 w-8 text-purple-600" />
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Average Deal</CardTitle>
-            <span className="h-4 w-4 text-muted-foreground">📈</span>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              ${metrics.averageDealSize.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-            </div>
-            <p className="text-xs text-muted-foreground">per deal</p>
-          </CardContent>
-        </Card>
-      </div>
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Top Agent Sales</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    ${analytics.topAgents[0]?.amount?.toLocaleString() || '0'}
+                  </p>
+                </div>
+                <Award className="h-8 w-8 text-orange-600" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+        {/* Charts Row 1 */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Daily Sales Trend */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Daily Sales Trend</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={analytics.dailyTrend}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                    <YAxis />
+                    <Tooltip formatter={(value) => [`$${value}`, 'Sales']} />
+                    <Line type="monotone" dataKey="amount" stroke="#8884d8" strokeWidth={2} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Top Agents */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Top Performing Agents</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={analytics.topAgents.slice(0, 8)} layout="horizontal">
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis type="number" />
+                    <YAxis dataKey="agent" type="category" tick={{ fontSize: 10 }} width={80} />
+                    <Tooltip formatter={(value) => [`$${value}`, 'Sales']} />
+                    <Bar dataKey="amount" fill="#82ca9d" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Charts Row 2 */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Sales by Service */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Sales by Service Type</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={Object.entries(analytics.salesByService).map(([name, value]) => ({ name, value }))}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {Object.entries(analytics.salesByService).map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => [`$${value}`, 'Sales']} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Sales by Team */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Sales by Team</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={Object.entries(analytics.salesByTeam).map(([team, amount]) => ({ team, amount }))}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="team" tick={{ fontSize: 12 }} />
+                    <YAxis />
+                    <Tooltip formatter={(value) => [`$${value}`, 'Sales']} />
+                    <Bar dataKey="amount" fill="#ffc658" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* User Analysis Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* User Count Distribution */}
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                <div className="flex items-center">
+                  <UserCheck className="mr-2 h-5 w-5" />
+                  User Count Distribution
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={analytics.userAnalysisData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="userCount" label={{ value: 'Number of Users', position: 'insideBottom', offset: -5 }} />
+                    <YAxis />
+                    <Tooltip formatter={(value, name) => {
+                      if (name === 'dealsCount') return [value, 'Number of Deals'];
+                      if (name === 'totalAmount') return [`$${value}`, 'Total Amount'];
+                      return [value, name];
+                    }} />
+                    <Bar dataKey="dealsCount" fill="#8884d8" name="Number of Deals" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Revenue by User Count */}
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                <div className="flex items-center">
+                  <BarChart3 className="mr-2 h-5 w-5" />
+                  Revenue by User Count
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ScatterChart>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis type="number" dataKey="userCount" name="Users" />
+                    <YAxis type="number" dataKey="totalAmount" name="Revenue" />
+                    <ZAxis type="number" dataKey="dealsCount" name="Deals" range={[50, 300]} />
+                    <Tooltip formatter={(value, name) => {
+                      if (name === 'userCount') return [value, 'Users per Deal'];
+                      if (name === 'totalAmount') return [`$${value}`, 'Total Revenue'];
+                      if (name === 'dealsCount') return [value, 'Number of Deals'];
+                      return [value, name];
+                    }} />
+                    <Scatter name="Deals" data={analytics.userAnalysisData} fill="#8884d8" />
+                  </ScatterChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Recent Deals Table */}
         <Card>
           <CardHeader>
-            <CardTitle>Sales by Agent</CardTitle>
+            <CardTitle>Recent Deals</CardTitle>
           </CardHeader>
           <CardContent>
-            <h3 className="text-lg font-semibold">Sales by Agent</h3>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={topAgents}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
-                    dataKey="agent" 
-                    angle={-45} 
-                    textAnchor="end"
-                    height={60}
-                    tick={{ fontSize: 12 }}
-                  />
-                  <YAxis />
-                  <Tooltip formatter={(value) => [`$${value}`, 'Sales']} />
-                  <Bar dataKey="amount" fill="#8884d8" name="Sales" />
-                </BarChart>
-              </ResponsiveContainer>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-2">Date</th>
+                    <th className="text-left py-2">Customer</th>
+                    <th className="text-left py-2">Amount</th>
+                    <th className="text-left py-2">Service</th>
+                    <th className="text-left py-2">Sales Agent</th>
+                    <th className="text-left py-2">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {analytics.recentDeals.map((deal, index) => (
+                    <tr key={index} className="border-b hover:bg-gray-50">
+                      <td className="py-2">{deal.date.toLocaleDateString()}</td>
+                      <td className="py-2">{deal.customer_name}</td>
+                      <td className="py-2 font-semibold">${deal.amount}</td>
+                      <td className="py-2">{deal.service}</td>
+                      <td className="py-2 capitalize">{deal.salesAgent}</td>
+                      <td className="py-2">
+                        <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
+                          Completed
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Sales by Service</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <h3 className="text-lg font-semibold">Sales by Service</h3>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={serviceData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                    nameKey="name"
-                    label={({ name, percent }: { name: string, percent: number }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {serviceData.map((entry, index: number) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+        {/* Agent Performance Table (Manager only) */}
+        {userRole === 'manager' && (
+          <Card className="mt-8">
+            <CardHeader>
+              <CardTitle>Agent Performance Summary</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-2">Agent</th>
+                      <th className="text-left py-2">Total Sales</th>
+                      <th className="text-left py-2">Deals Count</th>
+                      <th className="text-left py-2">Average Deal</th>
+                      <th className="text-left py-2">Performance</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {analytics.topAgents.map((agent, index) => (
+                      <tr key={index} className="border-b hover:bg-gray-50">
+                        <td className="py-2 capitalize font-medium">{agent.agent}</td>
+                        <td className="py-2 font-semibold">${agent.amount.toLocaleString()}</td>
+                        <td className="py-2">{agent.deals}</td>
+                        <td className="py-2">${(agent.amount / agent.deals).toFixed(0)}</td>
+                        <td className="py-2">
+                          <div className="flex items-center">
+                            <div className="w-20 bg-gray-200 rounded-full h-2 mr-2">
+                              <div 
+                                className="bg-blue-600 h-2 rounded-full" 
+                                style={{ width: `${(agent.amount / analytics.topAgents[0].amount) * 100}%` }}
+                              ></div>
+                            </div>
+                            <span className="text-xs">
+                              {((agent.amount / analytics.topAgents[0].amount) * 100).toFixed(0)}%
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
                     ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => [`$${value}`, 'Sales']} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
 }
+
+export default SalesAnalysisDashboard;

@@ -280,84 +280,77 @@ const EnhancedSalesDashboard = () => {
     return () => window.removeEventListener("resize", handleResize)
   }, [])
 
-  // Load initial data
-  useEffect(() => {
-    const loadInitialData = () => {
-      try {
-        setLoading(true)
-        setLoadingProgress(20)
-        setLoadingMessage("Processing initial sales data...")
+  // Load data from CSV file
+  const loadCSVData = useCallback(async () => {
+    try {
+      setLoading(true)
+      setLoadingProgress(20)
+      setLoadingMessage("Loading sales data...")
 
-        // Use the provided CSV data
-        const csvData = `date,customer_name,Phone number,"Email address
-",AMOUNT,USER,ADDRESS,sales_agent,closing_agent,TEAM,DURATION,TYPE PROGRAM,TYPE SERVISE,"INVOICE
-",DEVICE ID,"DEVICE KEY 
-",ANY COMMENT ?,NO.USER,Column 1,sales_agent_norm,closing_agent_norm,SalesAgentID,ClosingAgentID,DealID
-01/08/2025,Huda kashif,20677333680/2538863215,hudaali.1992.3.23@gmail.com,79,Hudakashif@1,CA,Ahmed Atef,Ahmed Atef,CS TEAM,TWO YEAR,IBO PLAYER,SLIVER,Website - 100,4d:7f:40:3f:14:2f,368631,Renewal,USER = 1 ACC,Done,ahmed atef,ahmed atef,Agent-001,Agent-001,Deal-0001`
+      // Fetch the CSV file from the public directory
+      const response = await fetch('/data/aug-ids.csv')
+      if (!response.ok) {
+        throw new Error(`Failed to load CSV data: ${response.statusText}`)
+      }
 
-        setLoadingProgress(60)
-        setLoadingMessage("Analyzing data structure...")
+      const csvText = await response.text()
+      setLoadingProgress(60)
+      setLoadingMessage("Processing data...")
 
-        Papa.parse(csvData, {
+      // Parse the CSV data using PapaParse
+      return new Promise<SalesRow[]>((resolve, reject) => {
+        Papa.parse(csvText, {
           header: true,
           skipEmptyLines: true,
-          complete: (results: Papa.ParseResult<any>) => {
+          complete: (results) => {
             try {
-              setLoadingProgress(80)
-              setLoadingMessage("Processing records...")
-
-              const rows: SalesRow[] = results.data
+              const parsedData = results.data
                 .map((row: any, index: number) => transformRow(row, index))
-                .filter((row: SalesRow) => {
-                  const isValid = row.customer_name && row.amount > 0 && row.sales_agent
-                  if (!isValid) {
-                    console.warn("Skipping invalid row:", row)
-                  }
-                  return isValid
-                })
-
-              setSalesData(rows)
-              setFilteredData(rows)
-
-              setLoadingProgress(100)
-              setLoadingMessage("Dashboard ready!")
-              
-              setTimeout(() => {
-                setLoading(false)
-              }, 500)
+                .filter((row): row is SalesRow => row !== null)
+              resolve(parsedData)
             } catch (error) {
-              console.error("Error processing data:", error)
-              setErrorState({
-                hasError: true,
-                message: "Failed to process sales data",
-                details: String(error),
-              })
-              setLoading(false)
+              reject(error)
             }
           },
-          error: (error: any) => {
-            console.error("CSV parsing error:", error)
-            setErrorState({
-              hasError: true,
-              message: "Failed to parse CSV data",
-              details: error.message || "Unknown parsing error",
-            })
-            setLoading(false)
-          },
+          error: (error: Error) => reject(error)
         })
+      })
+    } catch (error) {
+      console.error("Error loading CSV data:", error)
+      setErrorState({
+        hasError: true,
+        message: "Failed to load sales data",
+        details: error instanceof Error ? error.message : String(error)
+      })
+      return []
+    } finally {
+      setLoadingProgress(100)
+      setLoading(false)
+    }
+  }, [])
+
+  // Load initial data
+  useEffect(() => {
+    const loadInitialData = async () => {
+      try {
+        const data = await loadCSVData()
+        setSalesData(data)
+        setFilteredData(data)
       } catch (error) {
-        console.error("Failed to load initial data:", error)
+        console.error("Error in loadInitialData:", error)
         setErrorState({
           hasError: true,
-          message: "Failed to initialize dashboard",
-          details: String(error),
+          message: "Failed to load sales data",
+          details: error instanceof Error ? error.message : String(error)
         })
+      } finally {
         setLoading(false)
+        setLoadingProgress(100)
       }
     }
 
     loadInitialData()
-  }, [])
+  }, [loadCSVData])
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
