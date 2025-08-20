@@ -110,7 +110,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             <div className="flex items-center space-x-2">
               <Tv className="h-8 w-8 text-cyan-500" />
               <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
-                Vmax IPTV
+                Vmax Sales
               </span>
             </div>
             <Button
@@ -131,13 +131,13 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             </Badge>
 
             <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 bg-clip-text text-transparent">
-              Vmax IPTV Sales
+              Vmax  Sales
               <br />
               Management System
             </h1>
 
             <p className="text-xl text-slate-300 mb-8 max-w-2xl mx-auto leading-relaxed">
-              Streamline your IPTV service sales with our comprehensive management platform. Track deals, manage
+              Streamline your service sales with our comprehensive management platform. Track deals, manage
               targets, and optimize performance with real-time analytics.
             </p>
 
@@ -220,9 +220,9 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           <Card className="bg-slate-900/50 border-slate-700/50 backdrop-blur-sm overflow-hidden">
             <CardContent className="p-12 text-center">
               <Globe className="h-16 w-16 text-cyan-500 mx-auto mb-6" />
-              <h3 className="text-3xl font-bold mb-4 text-slate-100">Ready to Transform Your IPTV Sales?</h3>
+              <h3 className="text-3xl font-bold mb-4 text-slate-100">Ready to Transform Your show the Sales?</h3>
               <p className="text-slate-400 text-lg mb-8 max-w-2xl mx-auto">
-                Join the future of IPTV service management with our comprehensive platform designed for modern sales
+                Join the future of service management with our comprehensive platform designed for modern sales
                 teams.
               </p>
               <Button
@@ -243,10 +243,10 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             <div className="flex items-center space-x-2">
               <Tv className="h-6 w-6 text-cyan-500" />
               <span className="text-lg font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
-                Vmax IPTV
+                Vmax 
               </span>
             </div>
-            <p className="text-slate-500 text-sm">© 2024 Vmax IPTV Sales Management System. All rights reserved.</p>
+            <p className="text-slate-500 text-sm">© 2025 Vmax Sales - Youssef Bassiony</p>
           </div>
         </footer>
       </div>

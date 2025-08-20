@@ -198,7 +198,7 @@ export default function LoginPage({ onLogin, onBack }: LoginPageProps) {
             <div className="flex items-center justify-center space-x-2 mb-4">
               <Tv className="h-8 w-8 text-cyan-500" />
               <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
-                Vmax IPTV
+                Vmax sales
               </span>
             </div>
             <h1 className="text-2xl font-bold text-slate-100 mb-2">Access Management System</h1>
