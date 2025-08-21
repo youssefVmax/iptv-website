@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Tv, User, Lock, ArrowLeft, Shield, Users, Headphones } from "lucide-react"
+import { Tv, User, Lock, ArrowLeft, Shield, Users, Headphones, Sun, Moon } from "lucide-react"
 
 interface LoginPageProps {
   onLogin: (role: "manager" | "salesman" | "customer-service", userData: { name: string; username: string }) => void
@@ -71,6 +71,7 @@ const SUPPORT_USERS = [
 ]
 
 export default function LoginPage({ onLogin, onBack }: LoginPageProps) {
+  const [isDark, setIsDark] = useState(true)
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [selectedRole, setSelectedRole] = useState<"manager" | "salesman" | "customer-service">("salesman")
@@ -79,6 +80,20 @@ export default function LoginPage({ onLogin, onBack }: LoginPageProps) {
   const [showDemo, setShowDemo] = useState(false)
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
+  // Apply theme to document
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add('dark')
+      document.documentElement.classList.remove('light')
+    } else {
+      document.documentElement.classList.add('light')
+      document.documentElement.classList.remove('dark')
+    }
+  }, [isDark])
+
+  const toggleTheme = () => {
+    setIsDark(!isDark)
+  }
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
@@ -173,12 +188,18 @@ export default function LoginPage({ onLogin, onBack }: LoginPageProps) {
   }
 
   return (
-    <div className="min-h-screen dark bg-slate-950 transition-colors duration-300">
+    <div className={`min-h-screen transition-colors duration-500 ${
+      isDark 
+        ? 'dark bg-slate-950' 
+        : 'light bg-gradient-to-br from-blue-50 via-white to-cyan-50'
+    }`}>
       <canvas
         ref={canvasRef}
         className="fixed inset-0 pointer-events-none z-0"
         style={{
-          background: "radial-gradient(ellipse at center, rgba(15, 23, 42, 0.8) 0%, rgba(2, 6, 23, 1) 100%)",
+          background: isDark 
+            ? "radial-gradient(ellipse at center, rgba(15, 23, 42, 0.8) 0%, rgba(2, 6, 23, 1) 100%)"
+            : "radial-gradient(ellipse at center, rgba(59, 130, 246, 0.1) 0%, rgba(147, 197, 253, 0.05) 100%)",
         }}
       />
 
@@ -189,27 +210,53 @@ export default function LoginPage({ onLogin, onBack }: LoginPageProps) {
             <Button
               variant="ghost"
               onClick={onBack}
-              className="absolute top-4 left-4 text-slate-400 hover:text-slate-100"
+              className={`absolute top-4 left-4 transition-colors duration-300 ${
+                isDark 
+                  ? 'text-slate-400 hover:text-slate-100' 
+                  : 'text-slate-600 hover:text-slate-800'
+              }`}
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back
             </Button>
 
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              className={`absolute top-4 right-4 transition-colors duration-300 ${
+                isDark 
+                  ? 'text-slate-400 hover:text-slate-100' 
+                  : 'text-slate-600 hover:text-slate-800'
+              }`}
+            >
+              {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </Button>
             <div className="flex items-center justify-center space-x-2 mb-4">
-              <Tv className="h-8 w-8 text-cyan-500" />
+              <Tv className={`h-8 w-8 transition-colors duration-300 ${
+                isDark ? 'text-cyan-500' : 'text-blue-600'
+              }`} />
               <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
                 Vmax sales
               </span>
             </div>
-            <h1 className="text-2xl font-bold text-slate-100 mb-2">Access Management System</h1>
-            <p className="text-slate-400">Sign in to your account</p>
+            <h1 className={`text-2xl font-bold mb-2 transition-colors duration-300 ${
+              isDark ? 'text-slate-100' : 'text-slate-800'
+            }`}>Access Management System</h1>
+            <p className={`transition-colors duration-300 ${
+              isDark ? 'text-slate-400' : 'text-slate-600'
+            }`}>Sign in to your account</p>
           </div>
 
           <div className="text-center mb-6">
             <Button
               variant="outline"
               onClick={() => setShowDemo(!showDemo)}
-              className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 border-purple-500/50 text-purple-400 hover:bg-purple-500/30"
+              className={`transition-all duration-300 ${
+                isDark 
+                  ? 'bg-gradient-to-r from-purple-500/20 to-pink-500/20 border-purple-500/50 text-purple-400 hover:bg-purple-500/30' 
+                  : 'bg-gradient-to-r from-purple-100/80 to-pink-100/80 border-purple-300/50 text-purple-700 hover:bg-purple-200/50'
+              }`}
             >
               {showDemo ? "Hide Demo Credentials" : "Show Demo Credentials"}
             </Button>
@@ -220,7 +267,9 @@ export default function LoginPage({ onLogin, onBack }: LoginPageProps) {
             <div className="flex-1 max-w-md mx-auto">
               {/* Role Selection */}
               <div className="mb-6">
-                <Label className="text-sm text-slate-400 mb-3 block">Select Your Role</Label>
+                <Label className={`text-sm mb-3 block transition-colors duration-300 ${
+                  isDark ? 'text-slate-400' : 'text-slate-600'
+                }`}>Select Your Role</Label>
                 <div className="grid grid-cols-3 gap-2">
                   <RoleButton
                     icon={Shield}
@@ -228,6 +277,7 @@ export default function LoginPage({ onLogin, onBack }: LoginPageProps) {
                     role="manager"
                     selected={selectedRole === "manager"}
                     onClick={() => setSelectedRole("manager")}
+                    isDark={isDark}
                   />
                   <RoleButton
                     icon={Users}
@@ -235,6 +285,7 @@ export default function LoginPage({ onLogin, onBack }: LoginPageProps) {
                     role="salesman"
                     selected={selectedRole === "salesman"}
                     onClick={() => setSelectedRole("salesman")}
+                    isDark={isDark}
                   />
                   <RoleButton
                     icon={Headphones}
@@ -242,13 +293,20 @@ export default function LoginPage({ onLogin, onBack }: LoginPageProps) {
                     role="customer-service"
                     selected={selectedRole === "customer-service"}
                     onClick={() => setSelectedRole("customer-service")}
+                    isDark={isDark}
                   />
                 </div>
               </div>
 
-              <Card className="bg-slate-900/50 border-slate-700/50 backdrop-blur-sm">
+              <Card className={`backdrop-blur-sm transition-all duration-300 ${
+                isDark 
+                  ? 'bg-slate-900/50 border-slate-700/50' 
+                  : 'bg-white/80 border-blue-200/50 shadow-lg'
+              }`}>
                 <CardHeader>
-                  <CardTitle className="text-slate-100 text-center">
+                  <CardTitle className={`text-center transition-colors duration-300 ${
+                    isDark ? 'text-slate-100' : 'text-slate-800'
+                  }`}>
                     {selectedRole === "manager"
                       ? "Manager Login"
                       : selectedRole === "salesman"
@@ -259,17 +317,25 @@ export default function LoginPage({ onLogin, onBack }: LoginPageProps) {
                 <CardContent>
                   <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                      <Label htmlFor="username" className="text-slate-400">
+                      <Label htmlFor="username" className={`transition-colors duration-300 ${
+                        isDark ? 'text-slate-400' : 'text-slate-600'
+                      }`}>
                         Username
                       </Label>
                       <div className="relative">
-                        <User className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
+                        <User className={`absolute left-3 top-3 h-4 w-4 transition-colors duration-300 ${
+                          isDark ? 'text-slate-500' : 'text-slate-400'
+                        }`} />
                         <Input
                           id="username"
                           type="text"
                           value={username}
                           onChange={(e) => setUsername(e.target.value)}
-                          className="pl-10 bg-slate-800/50 border-slate-700 text-slate-100"
+                          className={`pl-10 transition-all duration-300 ${
+                            isDark 
+                              ? 'bg-slate-800/50 border-slate-700 text-slate-100' 
+                              : 'bg-white/70 border-blue-200 text-slate-800'
+                          }`}
                           placeholder="Enter your username"
                           required
                         />
@@ -277,17 +343,25 @@ export default function LoginPage({ onLogin, onBack }: LoginPageProps) {
                     </div>
 
                     <div>
-                      <Label htmlFor="password" className="text-slate-400">
+                      <Label htmlFor="password" className={`transition-colors duration-300 ${
+                        isDark ? 'text-slate-400' : 'text-slate-600'
+                      }`}>
                         Password
                       </Label>
                       <div className="relative">
-                        <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
+                        <Lock className={`absolute left-3 top-3 h-4 w-4 transition-colors duration-300 ${
+                          isDark ? 'text-slate-500' : 'text-slate-400'
+                        }`} />
                         <Input
                           id="password"
                           type="password"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          className="pl-10 bg-slate-800/50 border-slate-700 text-slate-100"
+                          className={`pl-10 transition-all duration-300 ${
+                            isDark 
+                              ? 'bg-slate-800/50 border-slate-700 text-slate-100' 
+                              : 'bg-white/70 border-blue-200 text-slate-800'
+                          }`}
                           placeholder="Enter your password"
                           required
                         />
@@ -295,14 +369,22 @@ export default function LoginPage({ onLogin, onBack }: LoginPageProps) {
                     </div>
 
                     {error && (
-                      <div className="text-red-400 text-sm text-center bg-red-500/10 border border-red-500/20 rounded p-2">
+                      <div className={`text-sm text-center rounded p-2 transition-all duration-300 ${
+                        isDark 
+                          ? 'text-red-400 bg-red-500/10 border border-red-500/20' 
+                          : 'text-red-600 bg-red-50 border border-red-200'
+                      }`}>
                         {error}
                       </div>
                     )}
 
                     <Button
                       type="submit"
-                      className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600"
+                      className={`w-full transition-all duration-300 ${
+                        isDark 
+                          ? 'bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600' 
+                          : 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 shadow-lg'
+                      }`}
                       disabled={isLoading}
                     >
                       {isLoading ? "Signing In..." : "Sign In"}
@@ -310,7 +392,9 @@ export default function LoginPage({ onLogin, onBack }: LoginPageProps) {
                   </form>
 
                   <div className="mt-4 text-center">
-                    <p className="text-xs text-slate-500">
+                    <p className={`text-xs transition-colors duration-300 ${
+                      isDark ? 'text-slate-500' : 'text-slate-500'
+                    }`}>
                       {selectedRole === "salesman"
                         ? "Use your assigned sales credentials (Agent-001 to Agent-025)"
                         : selectedRole === "manager"
@@ -324,10 +408,18 @@ export default function LoginPage({ onLogin, onBack }: LoginPageProps) {
 
             {showDemo && (
               <div className="flex-1 max-w-2xl">
-                <Card className="bg-slate-900/50 border-slate-700/50 backdrop-blur-sm">
+                <Card className={`backdrop-blur-sm transition-all duration-300 ${
+                  isDark 
+                    ? 'bg-slate-900/50 border-slate-700/50' 
+                    : 'bg-white/80 border-blue-200/50 shadow-lg'
+                }`}>
                   <CardHeader>
-                    <CardTitle className="text-slate-100 text-center flex items-center justify-center gap-2">
-                      <Shield className="h-5 w-5 text-cyan-500" />
+                    <CardTitle className={`text-center flex items-center justify-center gap-2 transition-colors duration-300 ${
+                      isDark ? 'text-slate-100' : 'text-slate-800'
+                    }`}>
+                      <Shield className={`h-5 w-5 transition-colors duration-300 ${
+                        isDark ? 'text-cyan-500' : 'text-blue-600'
+                      }`} />
                       Demo Credentials
                     </CardTitle>
                   </CardHeader>
@@ -460,21 +552,27 @@ function RoleButton({
   role,
   selected,
   onClick,
+  isDark,
 }: {
   icon: any
   label: string
   role: string
   selected: boolean
   onClick: () => void
+  isDark: boolean
 }) {
   return (
     <Button
       variant="outline"
       onClick={onClick}
-      className={`h-16 flex flex-col items-center justify-center space-y-1 ${
+      className={`h-16 flex flex-col items-center justify-center space-y-1 transition-all duration-300 ${
         selected
-          ? "bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border-cyan-500/50 text-cyan-400"
-          : "border-slate-700 bg-slate-800/30 text-slate-400 hover:bg-slate-700/50"
+          ? isDark 
+            ? "bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border-cyan-500/50 text-cyan-400"
+            : "bg-gradient-to-br from-blue-100/80 to-cyan-100/80 border-blue-400/50 text-blue-700"
+          : isDark
+            ? "border-slate-700 bg-slate-800/30 text-slate-400 hover:bg-slate-700/50"
+            : "border-blue-200 bg-white/50 text-slate-600 hover:bg-blue-50"
       }`}
     >
       <Icon className="h-5 w-5" />

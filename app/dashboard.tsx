@@ -23,6 +23,8 @@ import {
   Trash2,
   PieChart,
   BarChart,
+  Sun,
+  Moon,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -39,6 +41,7 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ userRole, user, onLogout }: DashboardProps) {
+  const [isDark, setIsDark] = useState(true)
   const [theme, setTheme] = useState<"dark" | "light">("dark")
   const [systemStatus, setSystemStatus] = useState(85)
   const [cpuUsage, setCpuUsage] = useState(42)
@@ -60,6 +63,20 @@ export default function Dashboard({ userRole, user, onLogout }: DashboardProps) 
     commission: 0,
   })
 
+  // Apply theme to document
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add('dark')
+      document.documentElement.classList.remove('light')
+    } else {
+      document.documentElement.classList.add('light')
+      document.documentElement.classList.remove('dark')
+    }
+  }, [isDark])
+
+  const toggleTheme = () => {
+    setIsDark(!isDark)
+  }
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentTime(new Date())
@@ -173,47 +190,90 @@ export default function Dashboard({ userRole, user, onLogout }: DashboardProps) 
   }
 
   return (
-    <div className={`min-h-screen dark bg-slate-950 transition-colors duration-300`}>
+    <div className={`min-h-screen transition-colors duration-500 ${
+      isDark 
+        ? 'dark bg-slate-950' 
+        : 'light bg-gradient-to-br from-blue-50 via-white to-cyan-50'
+    }`}>
       <canvas
         ref={canvasRef}
         className="fixed inset-0 pointer-events-none z-0"
         style={{
-          background: "radial-gradient(ellipse at center, rgba(15, 23, 42, 0.8) 0%, rgba(2, 6, 23, 1) 100%)",
+          background: isDark 
+            ? "radial-gradient(ellipse at center, rgba(15, 23, 42, 0.8) 0%, rgba(2, 6, 23, 1) 100%)"
+            : "radial-gradient(ellipse at center, rgba(59, 130, 246, 0.1) 0%, rgba(147, 197, 253, 0.05) 100%)",
         }}
       />
 
       <div className="container mx-auto p-4 relative z-10">
-        <header className="flex items-center justify-between py-4 border-b border-slate-700/50 mb-6">
+        <header className={`flex items-center justify-between py-4 border-b mb-6 transition-colors duration-300 ${
+          isDark ? 'border-slate-700/50' : 'border-blue-200/50'
+        }`}>
           <div className="flex items-center space-x-2">
-            <Tv className="h-8 w-8 text-cyan-500" />
+            <Tv className={`h-8 w-8 transition-colors duration-300 ${
+              isDark ? 'text-cyan-500' : 'text-blue-600'
+            }`} />
             <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
               Vmax  Sales
             </span>
           </div>
 
           <div className="flex items-center space-x-6">
-            <div className="hidden md:flex items-center space-x-1 bg-slate-800/50 rounded-full px-3 py-1.5 border border-slate-700/50 backdrop-blur-sm">
-              <Search className="h-4 w-4 text-slate-400" />
+            <div className={`hidden md:flex items-center space-x-1 rounded-full px-3 py-1.5 border backdrop-blur-sm transition-all duration-300 ${
+              isDark 
+                ? 'bg-slate-800/50 border-slate-700/50' 
+                : 'bg-white/70 border-blue-200/50'
+            }`}>
+              <Search className={`h-4 w-4 transition-colors duration-300 ${
+                isDark ? 'text-slate-400' : 'text-slate-500'
+              }`} />
               <input
                 type="text"
                 placeholder="Search deals, customers..."
-                className="bg-transparent border-none focus:outline-none text-sm w-40 placeholder:text-slate-500"
+                className={`bg-transparent border-none focus:outline-none text-sm w-40 transition-colors duration-300 ${
+                  isDark 
+                    ? 'text-slate-100 placeholder:text-slate-500' 
+                    : 'text-slate-800 placeholder:text-slate-400'
+                }`}
               />
             </div>
 
             <div className="flex items-center space-x-3">
-              <Button variant="ghost" size="icon" className="relative text-slate-400 hover:text-slate-100">
-                <Bell className="h-5 w-5" />
-                <span className="absolute -top-1 -right-1 h-2 w-2 bg-cyan-500 rounded-full animate-pulse"></span>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={toggleTheme}
+                className={`transition-colors duration-300 ${
+                  isDark 
+                    ? 'text-slate-400 hover:text-slate-100' 
+                    : 'text-slate-600 hover:text-slate-800'
+                }`}
+              >
+                {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </Button>
 
-              <div className="flex items-center space-x-2 text-sm text-slate-300">
+              <Button variant="ghost" size="icon" className={`relative transition-colors duration-300 ${
+                isDark ? 'text-slate-400 hover:text-slate-100' : 'text-slate-600 hover:text-slate-800'
+              }`}>
+                <Bell className="h-5 w-5" />
+                <span className={`absolute -top-1 -right-1 h-2 w-2 rounded-full animate-pulse transition-colors duration-300 ${
+                  isDark ? 'bg-cyan-500' : 'bg-blue-500'
+                }`}></span>
+              </Button>
+
+              <div className={`flex items-center space-x-2 text-sm transition-colors duration-300 ${
+                isDark ? 'text-slate-300' : 'text-slate-700'
+              }`}>
                 <User className="h-4 w-4" />
                 <span>{user.name}</span>
-                <span className="text-slate-500">({userRole})</span>
+                <span className={`transition-colors duration-300 ${
+                  isDark ? 'text-slate-500' : 'text-slate-500'
+                }`}>({userRole})</span>
               </div>
 
-              <Button variant="ghost" size="icon" onClick={onLogout} className="text-slate-400 hover:text-slate-100">
+              <Button variant="ghost" size="icon" onClick={onLogout} className={`transition-colors duration-300 ${
+                isDark ? 'text-slate-400 hover:text-slate-100' : 'text-slate-600 hover:text-slate-800'
+              }`}>
                 <LogOut className="h-5 w-5" />
               </Button>
             </div>
@@ -223,7 +283,11 @@ export default function Dashboard({ userRole, user, onLogout }: DashboardProps) 
         {/* Main content */}
         <div className="grid grid-cols-12 gap-6">
           <div className="col-span-12 md:col-span-3 lg:col-span-2">
-            <Card className="bg-slate-900/50 border-slate-700/50 backdrop-blur-sm h-full">
+            <Card className={`backdrop-blur-sm h-full transition-all duration-300 ${
+              isDark 
+                ? 'bg-slate-900/50 border-slate-700/50' 
+                : 'bg-white/80 border-blue-200/50 shadow-lg'
+            }`}>
               <CardContent className="p-4">
                 <nav className="space-y-2">
                   <NavItem
@@ -306,7 +370,11 @@ function NavItem({
     <Button
       variant="ghost"
       onClick={onClick}
-      className={`w-full justify-start ${active ? "bg-slate-800/70 text-cyan-400" : "text-slate-400 hover:text-slate-100"}`}
+      className={`w-full justify-start transition-all duration-300 ${
+        active 
+          ? "bg-slate-800/70 text-cyan-400 dark:bg-slate-800/70 dark:text-cyan-400 bg-blue-100/70 text-blue-700" 
+          : "text-slate-400 hover:text-slate-100 dark:text-slate-400 dark:hover:text-slate-100 text-slate-600 hover:text-slate-800"
+      }`}
     >
       <Icon className="mr-2 h-4 w-4" />
       {label}
