@@ -11,8 +11,16 @@ export interface User {
 
 // Updated user database with proper IDs matching CSV data
 export const USERS: User[] = [
-  // Manager/Admin
-  { id: 'manager-001', username: 'manager', password: 'admin123', name: 'System Manager', role: 'manager', email: 'manager@vmax.com' },
+  // Manager/Admin (same person)
+  { 
+    id: 'manager-001', 
+    username: 'manager', 
+    password: 'admin123', 
+    name: 'System Manager', 
+    role: 'manager', 
+    email: 'manager@vmax.com',
+    team: 'MANAGEMENT'
+  },
   
   // Sales Team - IDs match CSV SalesAgentID
   { id: 'Agent-001', username: 'Agent-001', password: '2752004', name: 'ahmed atef', role: 'salesman', team: 'CS TEAM' },
@@ -31,6 +39,8 @@ export const USERS: User[] = [
   { id: 'Agent-014', username: 'Agent-014', password: 'ko021', name: 'khaled tarek', role: 'salesman', team: 'ALI ASHRAF' },
   { id: 'Agent-015', username: 'Agent-015', password: '2134', name: 'mostafa shafey', role: 'salesman', team: 'SAIF MOHAMED' },
   { id: 'Agent-016', username: 'Agent-016', password: 'ro1234', name: 'kerolos montaser', role: 'salesman', team: 'SAIF MOHAMED' },
+  
+  // Customer Service Team
   { id: 'Agent-017', username: 'Agent-017', password: 'support123', name: 'heba ali', role: 'customer-service', team: 'CS TEAM' },
   { id: 'Agent-018', username: 'Agent-018', password: 'support123', name: 'beshoy hany', role: 'customer-service', team: 'SAIF MOHAMED' },
   { id: 'Agent-019', username: 'Agent-019', password: 'support123', name: 'hussin tamer', role: 'customer-service', team: 'ALI ASHRAF' },
@@ -53,4 +63,8 @@ export function getUserById(id: string): User | null {
 
 export function getUsersByRole(role: User['role']): User[] {
   return USERS.filter(u => u.role === role);
+}
+
+export function getUsersByTeam(team: string): User[] {
+  return USERS.filter(u => u.team === team);
 }

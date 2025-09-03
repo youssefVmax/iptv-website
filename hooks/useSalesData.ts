@@ -40,19 +40,26 @@ export function useSalesData(userRole: string, userId?: string, userName?: strin
         }
         let data = await response.json();
         
-        // Filter data based on user role and ID
-        if (userRole === 'salesman' && userId) {
-          data = data.filter((sale: Sale) => 
-            sale.SalesAgentID === userId || 
-            sale.ClosingAgentID === userId ||
-            sale.sales_agent_norm?.toLowerCase() === userName?.toLowerCase() ||
-            sale.closing_agent_norm?.toLowerCase() === userName?.toLowerCase()
-          );
-        } else if (userRole === 'customer-service' && userId) {
-          data = data.filter((sale: Sale) => 
-            sale.ClosingAgentID === userId ||
-            sale.closing_agent_norm?.toLowerCase() === userName?.toLowerCase()
-          );
+        // Filter data based on user role and exact name matching
+        if (userRole === 'salesman' && userName) {
+          // Match by exact normalized name for salesmen
+          const normalizedUserName = userName.toLowerCase().trim();
+          data = data.filter((sale: Sale) => {
+            const salesAgentMatch = sale.sales_agent_norm?.toLowerCase().trim() === normalizedUserName;
+            const closingAgentMatch = sale.closing_agent_norm?.toLowerCase().trim() === normalizedUserName;
+            const idMatch = sale.SalesAgentID === userId || sale.ClosingAgentID === userId;
+            
+            return salesAgentMatch || closingAgentMatch || idMatch;
+          });
+        } else if (userRole === 'customer-service' && userName) {
+          // Customer service sees deals they're involved in as closing agents
+          const normalizedUserName = userName.toLowerCase().trim();
+          data = data.filter((sale: Sale) => {
+            const closingAgentMatch = sale.closing_agent_norm?.toLowerCase().trim() === normalizedUserName;
+            const idMatch = sale.ClosingAgentID === userId;
+            
+            return closingAgentMatch || idMatch;
+          });
         }
         // Manager sees all data (no filter)
         

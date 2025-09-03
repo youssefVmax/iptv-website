@@ -1,12 +1,15 @@
 "use client"
 
+import { useState } from "react"
 import { AuthProvider, useAuth } from "@/hooks/useAuth"
 import LandingPage from "./components/landing-page"
 import LoginPage from "./components/login-page"
 import FullPageDashboard from "@/components/full-page-dashboard"
+import { Toaster } from "@/components/ui/toaster"
 
 function AppContent() {
   const { user, login, logout, isAuthenticated, loading } = useAuth()
+  const [showLogin, setShowLogin] = useState(false)
 
   if (loading) {
     return (
@@ -20,37 +23,26 @@ function AppContent() {
   }
 
   if (!isAuthenticated) {
-    return <AuthFlow onLogin={login} />
+    if (!showLogin) {
+      return <LandingPage onGetStarted={() => setShowLogin(true)} />
+    }
+
+    return (
+      <LoginPage 
+        onLogin={login}
+        onBack={() => setShowLogin(false)} 
+      />
+    )
   }
 
   return <FullPageDashboard />
-}
-
-function AuthFlow({ onLogin }: { onLogin: (username: string, password: string) => Promise<boolean> }) {
-  const [showLogin, setShowLogin] = useState(false)
-
-  if (!showLogin) {
-    return <LandingPage onGetStarted={() => setShowLogin(true)} />
-  }
-
-  return (
-    <LoginPage 
-      onLogin={async (role, userData) => {
-        const success = await onLogin(userData.username, userData.password || '')
-        return success
-      }} 
-      onBack={() => setShowLogin(false)} 
-    />
-  )
 }
 
 export default function Home() {
   return (
     <AuthProvider>
       <AppContent />
+      <Toaster />
     </AuthProvider>
   )
-}
-
-  return <Dashboard userRole={userRole} user={user} onLogout={handleLogout} />
 }

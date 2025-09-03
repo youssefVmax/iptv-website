@@ -39,7 +39,7 @@ interface SalesAnalysisDashboardProps {
 
 export function SalesAnalysisDashboard({ 
   userRole, 
-  user = { name: 'User', username: 'user' } 
+  user = { name: 'User', username: 'user', id: 'default' } 
 }: SalesAnalysisDashboardProps) {
   const [salesData, setSalesData] = useState<DealData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -77,12 +77,14 @@ export function SalesAnalysisDashboard({
                 ...row,
                 date: dateValue,
                 amount: parseFloat(row.AMOUNT) || 0,
-                salesAgent: (row.sales_agent_norm || '').toLowerCase(),
-                closingAgent: (row.closing_agent_norm || '').toLowerCase(),
+                salesAgent: (row.sales_agent_norm || '').toLowerCase().trim(),
+                closingAgent: (row.closing_agent_norm || '').toLowerCase().trim(),
                 service: row['TYPE SERVISE'] || 'Unknown',
                 program: row['TYPE PROGRAM'] || 'Unknown',
                 team: row.TEAM || 'Unknown',
-                duration: row.DURATION || 'Unknown'
+                duration: row.DURATION || 'Unknown',
+                salesAgentId: row.SalesAgentID || '',
+                closingAgentId: row.ClosingAgentID || ''
               };
             });
             setSalesData(processedData);
@@ -110,13 +112,23 @@ export function SalesAnalysisDashboard({
 
     let filteredData = salesData;
     
+    // Filter data based on user role and exact name matching
     if (userRole === 'salesman' && user?.name) {
-      const agentName = user.name.toLowerCase();
+      const agentName = user.name.toLowerCase().trim();
       filteredData = salesData.filter(deal => 
-        (deal.salesAgent?.toLowerCase() === agentName) || 
-        (deal.closingAgent?.toLowerCase() === agentName)
+        (deal.salesAgent === agentName) || 
+        (deal.closingAgent === agentName) ||
+        (deal.salesAgentId === user.id) ||
+        (deal.closingAgentId === user.id)
+      );
+    } else if (userRole === 'customer-service' && user?.name) {
+      const agentName = user.name.toLowerCase().trim();
+      filteredData = salesData.filter(deal => 
+        (deal.closingAgent === agentName) ||
+        (deal.closingAgentId === user.id)
       );
     }
+    // Manager sees all data (no filter)
 
     const totalSales = filteredData.reduce((sum, deal) => sum + (deal.amount || 0), 0);
     const totalDeals = filteredData.length;
