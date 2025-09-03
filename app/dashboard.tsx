@@ -168,10 +168,6 @@ export default function Dashboard({ userRole, user, onLogout }: DashboardProps) 
     return () => window.removeEventListener("resize", handleResize)
   }, [])
 
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === "dark" ? "light" : "dark"))
-  }
-
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString("en-US", {
       hour12: false,
