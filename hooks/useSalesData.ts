@@ -24,7 +24,7 @@ interface SalesMetrics {
   recentSales: Sale[];
 }
 
-export function useSalesData(userRole: string, userId?: string) {
+export function useSalesData(userRole: string, userId?: string, userName?: string) {
   const [salesData, setSalesData] = useState<Sale[]>([]);
   const [metrics, setMetrics] = useState<SalesMetrics | null>(null);
   const [loading, setLoading] = useState(true);
@@ -38,7 +38,24 @@ export function useSalesData(userRole: string, userId?: string) {
         if (!response.ok) {
           throw new Error('Failed to fetch sales data');
         }
-        const data = await response.json();
+        let data = await response.json();
+        
+        // Filter data based on user role and ID
+        if (userRole === 'salesman' && userId) {
+          data = data.filter((sale: Sale) => 
+            sale.SalesAgentID === userId || 
+            sale.ClosingAgentID === userId ||
+            sale.sales_agent_norm?.toLowerCase() === userName?.toLowerCase() ||
+            sale.closing_agent_norm?.toLowerCase() === userName?.toLowerCase()
+          );
+        } else if (userRole === 'customer-service' && userId) {
+          data = data.filter((sale: Sale) => 
+            sale.ClosingAgentID === userId ||
+            sale.closing_agent_norm?.toLowerCase() === userName?.toLowerCase()
+          );
+        }
+        // Manager sees all data (no filter)
+        
         setSalesData(data);
         
         // Calculate metrics
@@ -83,7 +100,7 @@ export function useSalesData(userRole: string, userId?: string) {
     };
 
     fetchData();
-  }, [userRole, userId]);
+  }, [userRole, userId, userName]);
 
   return {
     sales: salesData,
