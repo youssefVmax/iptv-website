@@ -37,6 +37,9 @@ import { SalesAnalysisDashboard } from '@/components/sales-dashboard-fixed'
 import NotificationsPage from "@/components/notifications-page-new"
 import { CustomerList } from "@/components/customer-list"
 import { AddDealPage } from "@/components/add-deal"
+import { DataCenter } from "@/components/data-center"
+import { SalesTargets } from "@/components/sales-targets"
+import { ProfileSettings } from "@/components/profile-settings"
 
 export default function FullPageDashboard() {
   const { user, logout } = useAuth()
@@ -457,9 +460,9 @@ function PageContent({
       return <AddDealPage />
     case "team-targets":
     case "my-targets":
-      return <SalesTargets user={user} />
+      return <SalesTargets userRole={user.role} user={user} />
     case "datacenter":
-      return <DataCenter user={user} uploadedFiles={uploadedFiles} setUploadedFiles={setUploadedFiles} />
+      return <DataCenter userRole={user.role} user={user} />
     case "notifications":
       return <NotificationsPage userRole={user.role} user={user} />
     case "customers":
@@ -468,9 +471,9 @@ function PageContent({
     case "team-management":
       return <TeamManagement user={user} />
     case "competition":
-      return <CompetitionDashboard user={user} />
+      return <CompetitionDashboard />
     case "settings":
-      return <SettingsPage user={user} />
+      return <ProfileSettings user={user} />
     default:
       return <DashboardOverview user={user} />
   }
@@ -573,308 +576,12 @@ function DealsManagement({ user }: { user: any }) {
   )
 }
 
-function SalesTargets({ user }: { user: any }) {
-  const isManager = user.role === 'manager'
-  
-  return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Target className="h-5 w-5 mr-2" />
-            {isManager ? 'Team Sales Targets' : 'My Sales Targets'}
-          </CardTitle>
-          <CardDescription>
-            {isManager 
-              ? 'Set and monitor team sales targets and performance' 
-              : 'Track your personal sales targets and progress'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isManager ? (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {[
-                  { name: "ahmed atef", target: 15000, current: 12500, team: "CS TEAM" },
-                  { name: "ali team", target: 18000, current: 16200, team: "ALI ASHRAF" },
-                  { name: "sherif ashraf", target: 14000, current: 11800, team: "SAIF MOHAMED" },
-                  { name: "mohsen sayed", target: 20000, current: 18500, team: "ALI ASHRAF" },
-                  { name: "marwan khaled", target: 16000, current: 14200, team: "ALI ASHRAF" },
-                  { name: "ahmed heikal", target: 15000, current: 13100, team: "SAIF MOHAMED" },
-                ].map((agent) => (
-                  <Card key={agent.name} className="p-4">
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <h4 className="font-medium capitalize">{agent.name}</h4>
-                        <Badge variant="outline">{agent.team}</Badge>
-                      </div>
-                      <div className="space-y-1">
-                        <div className="flex justify-between text-sm">
-                          <span>Progress</span>
-                          <span>{Math.round((agent.current / agent.target) * 100)}%</span>
-                        </div>
-                        <div className="w-full bg-muted rounded-full h-2">
-                          <div 
-                            className="bg-gradient-to-r from-cyan-500 to-blue-500 h-2 rounded-full transition-all duration-500"
-                            style={{ width: `${Math.min((agent.current / agent.target) * 100, 100)}%` }}
-                          />
-                        </div>
-                        <div className="flex justify-between text-xs text-muted-foreground">
-                          <span>${agent.current.toLocaleString()}</span>
-                          <span>${agent.target.toLocaleString()}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card className="p-6">
-                  <h3 className="text-lg font-semibold mb-4">Monthly Target</h3>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span>Current Progress</span>
-                      <span className="font-bold">68%</span>
-                    </div>
-                    <div className="w-full bg-muted rounded-full h-3">
-                      <div className="bg-gradient-to-r from-cyan-500 to-blue-500 h-3 rounded-full" style={{ width: '68%' }} />
-                    </div>
-                    <div className="flex justify-between text-sm text-muted-foreground">
-                      <span>$13,600</span>
-                      <span>$20,000</span>
-                    </div>
-                  </div>
-                </Card>
-                
-                <Card className="p-6">
-                  <h3 className="text-lg font-semibold mb-4">This Month</h3>
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-sm">Deals Closed</span>
-                      <span className="font-bold">12</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm">Revenue Generated</span>
-                      <span className="font-bold">$13,600</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm">Commission Earned</span>
-                      <span className="font-bold text-green-600">$1,360</span>
-                    </div>
-                  </div>
-                </Card>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  )
-}
 
-function DataCenter({ user, uploadedFiles, setUploadedFiles }: { 
-  user: any; 
-  uploadedFiles: string[];
-  setUploadedFiles: (files: string[]) => void;
-}) {
-  const isManager = user.role === 'manager'
-  
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file) {
-      // Simulate file upload
-      const fileName = file.name
-      setUploadedFiles([...uploadedFiles, fileName])
-      
-      // In a real app, you would upload to your server here
-      console.log('Uploading file:', fileName)
-    }
-  }
 
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold">Data Center</h2>
-          <p className="text-muted-foreground">
-            {isManager 
-              ? 'Upload and manage Excel data files for the team' 
-              : 'View assigned data and download resources'}
-          </p>
-        </div>
-        {isManager && (
-          <div className="flex space-x-2">
-            <input
-              type="file"
-              accept=".xlsx,.xls,.csv"
-              onChange={handleFileUpload}
-              className="hidden"
-              id="file-upload"
-            />
-            <label htmlFor="file-upload">
-              <Button className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600" asChild>
-                <span>
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload Excel
-                </span>
-              </Button>
-            </label>
-          </div>
-        )}
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* Current Dataset */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Database className="h-5 w-5 mr-2" />
-              Current Dataset
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">File:</span>
-                <span className="text-sm font-medium">aug-ids.csv</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Records:</span>
-                <span className="text-sm font-medium">90 deals</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Last Updated:</span>
-                <span className="text-sm font-medium">Today</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Size:</span>
-                <span className="text-sm font-medium">2.3 MB</span>
-              </div>
-            </div>
-            <Button variant="outline" className="w-full mt-4">
-              <Download className="h-4 w-4 mr-2" />
-              Download Current Data
-            </Button>
-          </CardContent>
-        </Card>
 
-        {/* Upload Section (Manager Only) */}
-        {isManager && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Upload className="h-5 w-5 mr-2" />
-                Upload New Data
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
-                <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground mb-2">
-                  Drop Excel file here or click to browse
-                </p>
-                <label htmlFor="file-upload">
-                  <Button variant="outline" size="sm" asChild>
-                    <span>Select File</span>
-                  </Button>
-                </label>
-              </div>
-              
-              {uploadedFiles.length > 0 && (
-                <div className="mt-4">
-                  <h4 className="text-sm font-medium mb-2">Recent Uploads:</h4>
-                  <div className="space-y-1">
-                    {uploadedFiles.slice(-3).map((file, index) => (
-                      <div key={index} className="text-xs text-muted-foreground flex items-center">
-                        <FileText className="h-3 w-3 mr-1" />
-                        {file}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
 
-        {/* Data Statistics */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Activity className="h-5 w-5 mr-2" />
-              Data Statistics
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Total Revenue:</span>
-                <span className="text-sm font-medium">$2.1M</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Active Agents:</span>
-                <span className="text-sm font-medium">25</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Teams:</span>
-                <span className="text-sm font-medium">4</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Avg Deal Size:</span>
-                <span className="text-sm font-medium">$1,247</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
-        {/* Available Datasets */}
-        <Card className="md:col-span-2 lg:col-span-3">
-          <CardHeader>
-            <CardTitle>Available Datasets</CardTitle>
-            <CardDescription>
-              {isManager ? 'Manage and assign datasets to team members' : 'Datasets assigned to you'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[
-                { name: "August Sales Data", file: "aug-ids.csv", records: 90, assigned: isManager ? "All Teams" : "You" },
-                { name: "Q3 Performance", file: "q3-performance.xlsx", records: 245, assigned: isManager ? "Sales Team" : "You" },
-                { name: "Customer Database", file: "customers.csv", records: 156, assigned: isManager ? "CS Team" : "You" },
-              ].map((dataset, index) => (
-                <Card key={index} className="p-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-start">
-                      <h4 className="font-medium">{dataset.name}</h4>
-                      <Badge variant="secondary" className="text-xs">{dataset.records} records</Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground">{dataset.file}</p>
-                    <p className="text-xs text-muted-foreground">Assigned to: {dataset.assigned}</p>
-                    <div className="flex space-x-2 mt-3">
-                      <Button variant="outline" size="sm" className="flex-1">
-                        <Download className="h-3 w-3 mr-1" />
-                        Download
-                      </Button>
-                      {isManager && (
-                        <Button variant="outline" size="sm" className="flex-1">
-                          <Settings className="h-3 w-3 mr-1" />
-                          Manage
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  )
-}
 
 function TeamManagement({ user }: { user: any }) {
   if (user.role !== 'manager') {
@@ -938,172 +645,17 @@ function TeamManagement({ user }: { user: any }) {
   )
 }
 
-function CompetitionDashboard({ user }: { user: any }) {
+function CompetitionDashboard() {
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <TrendingUp className="h-5 w-5 mr-2" />
-            Sales Competition Dashboard
-          </CardTitle>
-          <CardDescription>
-            {user.role === 'manager' 
-              ? 'Monitor team competition and performance rankings' 
-              : 'View your ranking and compete with colleagues'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[400px] flex items-center justify-center">
-            <PieChart className="h-12 w-12 text-muted-foreground" />
-            <span className="ml-4 text-muted-foreground">
-              Competition dashboard will be displayed here
-            </span>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+    <iframe 
+      src="/competation" 
+      className="w-full h-[calc(100vh-200px)] border-0 rounded-lg"
+      title="Sales Competition Dashboard"
+    />
   )
 }
 
-function SettingsPage({ user }: { user: any }) {
-  const [profile, setProfile] = useState({
-    name: user.name,
-    email: user.email || '',
-    phone: user.phone || '',
-    team: user.team || '',
-  })
 
-  const handleProfileChange = (field: string, value: string) => {
-    setProfile(prev => ({ ...prev, [field]: value }))
-  }
 
-  return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Profile Settings</CardTitle>
-            <CardDescription>Update your personal information</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Full Name</label>
-              <input
-                type="text"
-                value={profile.name}
-                onChange={(e) => handleProfileChange('name', e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Email</label>
-              <input
-                type="email"
-                value={profile.email}
-                onChange={(e) => handleProfileChange('email', e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Phone</label>
-              <input
-                type="tel"
-                value={profile.phone}
-                onChange={(e) => handleProfileChange('phone', e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Role</label>
-              <input
-                type="text"
-                value={user.role}
-                disabled
-                className="w-full px-3 py-2 border rounded-lg bg-muted text-muted-foreground"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Team</label>
-              <input
-                type="text"
-                value={profile.team}
-                disabled
-                className="w-full px-3 py-2 border rounded-lg bg-muted text-muted-foreground"
-              />
-            </div>
-          </CardContent>
-        </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Account Security</CardTitle>
-            <CardDescription>Manage your account security settings</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Username</label>
-              <input
-                type="text"
-                value={user.username}
-                disabled
-                className="w-full px-3 py-2 border rounded-lg bg-muted text-muted-foreground"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Change Password</label>
-              <input
-                type="password"
-                placeholder="Enter new password"
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Confirm Password</label>
-              <input
-                type="password"
-                placeholder="Confirm new password"
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
-              />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
-      {user.role === 'manager' && (
-        <Card>
-          <CardHeader>
-            <CardTitle>System Administration</CardTitle>
-            <CardDescription>Advanced system settings and controls</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Button variant="outline" className="h-20 flex flex-col">
-                <Users className="h-6 w-6 mb-2" />
-                User Management
-              </Button>
-              <Button variant="outline" className="h-20 flex flex-col">
-                <Database className="h-6 w-6 mb-2" />
-                Database Backup
-              </Button>
-              <Button variant="outline" className="h-20 flex flex-col">
-                <Settings className="h-6 w-6 mb-2" />
-                System Config
-              </Button>
-              <Button variant="outline" className="h-20 flex flex-col">
-                <BarChart3 className="h-6 w-6 mb-2" />
-                Reports
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      <div className="flex justify-end">
-        <Button className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600">
-          Save Changes
-        </Button>
-      </div>
-    </div>
-  )
-}
