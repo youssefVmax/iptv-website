@@ -40,6 +40,7 @@ import { AddDealPage } from "@/components/add-deal"
 import { DataCenter } from "@/components/data-center"
 import { SalesTargets } from "@/components/sales-targets"
 import { ProfileSettings } from "@/components/profile-settings"
+import AdvancedAnalytics from "@/components/advanced-analytics"
 
 export default function FullPageDashboard() {
   const { user, logout } = useAuth()
@@ -451,7 +452,7 @@ function PageContent({
     case "dashboard":
       return <DashboardOverview user={user} />
     case "analytics":
-      return <SalesAnalysisDashboard userRole={user.role} user={user} />
+      return <AdvancedAnalytics userRole={user.role} user={user} />
     case "all-deals":
     case "my-deals":
     case "support-deals":
@@ -482,6 +483,27 @@ function PageContent({
 function DashboardOverview({ user }: { user: any }) {
   return (
     <div className="space-y-6">
+      {/* Welcome Section */}
+      <Card className="bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border-cyan-200/50">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-xl font-bold">Welcome back, {user.name}!</h3>
+              <p className="text-muted-foreground">
+                {user.role === 'manager' 
+                  ? 'Here\'s an overview of your team\'s performance today.'
+                  : user.role === 'salesman'
+                  ? 'Ready to close some deals? Here\'s your performance overview.'
+                  : 'Here\'s an overview of your customer support activities.'}
+              </p>
+            </div>
+            <Badge variant="outline" className="text-sm">
+              {user.team || user.role}
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard
           title="Total Sales"
@@ -514,6 +536,80 @@ function DashboardOverview({ user }: { user: any }) {
       </div>
 
       <SalesAnalysisDashboard userRole={user.role} user={user} />
+      
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+          <CardDescription>Common tasks for your role</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {user.role === 'manager' && (
+              <>
+                <Button variant="outline" className="h-20 flex flex-col">
+                  <Plus className="h-6 w-6 mb-2" />
+                  Add Deal
+                </Button>
+                <Button variant="outline" className="h-20 flex flex-col">
+                  <Target className="h-6 w-6 mb-2" />
+                  Set Targets
+                </Button>
+                <Button variant="outline" className="h-20 flex flex-col">
+                  <Users className="h-6 w-6 mb-2" />
+                  Manage Team
+                </Button>
+                <Button variant="outline" className="h-20 flex flex-col">
+                  <BarChart3 className="h-6 w-6 mb-2" />
+                  View Reports
+                </Button>
+              </>
+            )}
+            
+            {user.role === 'salesman' && (
+              <>
+                <Button variant="outline" className="h-20 flex flex-col">
+                  <Plus className="h-6 w-6 mb-2" />
+                  New Deal
+                </Button>
+                <Button variant="outline" className="h-20 flex flex-col">
+                  <FileText className="h-6 w-6 mb-2" />
+                  My Deals
+                </Button>
+                <Button variant="outline" className="h-20 flex flex-col">
+                  <Target className="h-6 w-6 mb-2" />
+                  My Targets
+                </Button>
+                <Button variant="outline" className="h-20 flex flex-col">
+                  <TrendingUp className="h-6 w-6 mb-2" />
+                  Competition
+                </Button>
+              </>
+            )}
+            
+            {user.role === 'customer-service' && (
+              <>
+                <Button variant="outline" className="h-20 flex flex-col">
+                  <Users className="h-6 w-6 mb-2" />
+                  Customers
+                </Button>
+                <Button variant="outline" className="h-20 flex flex-col">
+                  <FileText className="h-6 w-6 mb-2" />
+                  Support Deals
+                </Button>
+                <Button variant="outline" className="h-20 flex flex-col">
+                  <Bell className="h-6 w-6 mb-2" />
+                  Notifications
+                </Button>
+                <Button variant="outline" className="h-20 flex flex-col">
+                  <Activity className="h-6 w-6 mb-2" />
+                  Analytics
+                </Button>
+              </>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }
@@ -654,8 +750,3 @@ function CompetitionDashboard() {
     />
   )
 }
-
-
-
-
-
